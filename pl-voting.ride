@@ -45,6 +45,7 @@ func calculateSRate() = {
 }
 
 
+let li100 = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10"] # , "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "22", "23", "24", "25", "26", "27", "28", "29", "30", "31", "32", "33", "34", "35", "36", "37", "38", "39", "40", "41", "42", "43", "44", "45", "46", "47", "48", "49", "50", "51", "52", "53", "54", "55", "56", "57", "58", "59", "60", "61", "62", "63", "64", "65", "66", "67", "68", "69", "70", "71", "72", "73", "74", "75", "76", "77", "78", "79", "80", "81", "82", "83", "84", "85", "86", "87", "88", "89", "90", "91", "92", "93", "94", "95", "96", "97", "98", "99", "100"]
 let batches = ["1", "2", "3", "4"]
 let availableOptions = ["1", "2", "3"]
 
@@ -68,7 +69,7 @@ func vote(option: String, votingId: String) = {
 
 
 @Callable(i)
-func results(votingId: String) = {
+func results(votingId: String, debug: Boolean) = {
   func batchHandler(accum: (Int, Int, Int), batch: String) =     {
     strict inv = invoke(this, "batchResults", [batch, votingId], nil)
     let new = match inv {
@@ -80,7 +81,12 @@ func results(votingId: String) = {
 
   let sRate = calculateSRate()
   let res = FOLD<4>(batches, (0, 0, 0), batchHandler)
-  throw("votes result " + toString(fraction(res._1, sRate, Scale8)) + ", " + toString(fraction(res._2, sRate, Scale8)) + ", " + toString(fraction(res._3, sRate, Scale8)))
+
+  if debug then {
+    throw("votes result " + toString(fraction(res._1, sRate, Scale8)) + ", " + toString(fraction(res._2, sRate, Scale8)) + ", " + toString(fraction(res._3, sRate, Scale8)))
+  } else {
+    ([], (fraction(res._1, sRate, Scale8), fraction(res._2, sRate, Scale8), fraction(res._3, sRate, Scale8)))
+  }
 }
 
 
@@ -117,7 +123,42 @@ func setVotingStatus(votingId: String, active: Boolean) = {
   }
 }
 
+@Callable(i)
+func startVoting(title: String, desc: String, duration: Int, options: String) = {
+  if (this != i.caller) then {throw("admin only")}
+  else {
+    func checkIdAvailable(accum: String, next: String) = {if accum == "0" && getBoolean(next+"_status") == unit then next else accum}
+    let votingId = FOLD<100>(li100, "0", checkIdAvailable)
 
-@Verifier(tx)
-func verify () = sigVerify(tx.bodyBytes, tx.proofs[0], tx.senderPublicKey)
+    [
+      BooleanEntry(votingId+"_status", true),
+      StringEntry(votingId+"_title", title),
+      StringEntry(votingId+"_description", desc),
+      StringEntry(votingId+"_proposer", i.caller.toString()),
+      IntegerEntry(votingId+"_startTime", lastBlock.timestamp),
+      IntegerEntry(votingId+"_endTime", lastBlock.timestamp + duration),
+      StringEntry(votingId+"_options", options)
+    ]
+  }
+}
+
+@Callable(i)
+func getData(debug: Boolean) = {
+  # id,title,status,description,proposer,start_time,end_time,option1|option2|option3,votes1|votes2|votes3
+  func addVotingData(accum: String, votingId: String) = {
+    let status = getBoolean(votingId+"_status")
+    if (status == unit) then {accum} else {
+      strict result = (invoke(this, "results", [votingId, false], [])).exactAs[(Int, Int, Int)]
+
+      accum + votingId + "," + tryGetString(votingId+"_title") + "," + status.value().toString() + "," + tryGetString(votingId+"_description") + "," + tryGetString(votingId+"_proposer") 
+      + "," + tryGetInteger(votingId+"_startTime").toString() + "," + tryGetInteger(votingId+"_endTime").toString() + "," + tryGetString(votingId+"_options")
+      + "," + result._1.toString() + "|" + result._2.toString() + "|" + result._3.toString() + ";"
+    }
+  }
+
+  let res = FOLD<10>(li100, "", addVotingData)
+
+  if (debug) then {throw(res)}
+  else {([], res)}
+}
 
