@@ -2,6 +2,8 @@
 {-# SCRIPT_TYPE ACCOUNT #-}
 {-# CONTENT_TYPE DAPP #-}
 
+let VERSION = "PDAO-1.0.1"
+
 let stakingAddress = Address(base58'3P7dGTVZp8VLDYy3XEaUQbiqfi9cMK1Ly5q')
 let parametersAddress = Address(base58'3PPhk65Ab4UDgbxYUDW7YSXkzHfWtj7WBrB')
 
@@ -60,9 +62,9 @@ func addVotingData(accum: String, votingId: String) = {
   if (status == unit) then {accum} else {
     strict result = (invoke(this, "results", [votingId, false], [])).exactAs[(Int, Int, Int)]
 
-    accum + votingId + "," + tryGetString(votingId+"_title") + "," + status.value().toString() + "," + tryGetString(votingId+"_description") + "," + tryGetString(votingId+"_proposer") 
-    + "," + tryGetInteger(votingId+"_startTime").toString() + "," + tryGetInteger(votingId+"_endTime").toString() + "," + tryGetString(votingId+"_options")
-    + "," + result._1.toString() + "|" + result._2.toString() + "|" + result._3.toString() + ";"
+    accum + votingId + ",," + tryGetString(votingId+"_title") + ",," + status.value().toString() + ",," + tryGetString(votingId+"_description") + ",," + tryGetString(votingId+"_proposer") 
+    + ",," + tryGetInteger(votingId+"_startTime").toString() + ",," + tryGetInteger(votingId+"_endTime").toString() + ",," + tryGetString(votingId+"_options")
+    + ",," + result._1.toString() + "|" + result._2.toString() + "|" + result._3.toString() + ";;"
   }
 }
 
