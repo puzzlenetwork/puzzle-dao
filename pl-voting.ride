@@ -162,7 +162,7 @@ func batchVoters(batch: String, votingId: String) = {
           0
     }
     if (voteValue <= 0) then {accum} else {
-      accum + addressStr + "," + toString(voteValue / Scale8) + ";"
+      accum + addressStr + ",," + toString(voteValue / Scale8) + ";;"
     }
   )
 
