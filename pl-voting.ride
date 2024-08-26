@@ -2,7 +2,7 @@
 {-# SCRIPT_TYPE ACCOUNT #-}
 {-# CONTENT_TYPE DAPP #-}
 
-let VERSION = "PDAO-1.0.1"
+let VERSION = "PDAO-1.0.2"
 
 let stakingAddress = Address(base58'3P7dGTVZp8VLDYy3XEaUQbiqfi9cMK1Ly5q')
 let parametersAddress = Address(base58'3PPhk65Ab4UDgbxYUDW7YSXkzHfWtj7WBrB')
@@ -191,7 +191,9 @@ func setVotingStatus(votingId: String, active: Boolean) = {
 
 @Callable(i)
 func startVoting(title: String, desc: String, duration: Int, options: String) = {
-  if (this != i.caller) then {throw("admin only")}
+  let stakedPluto = fraction(getInteger(stakingAddress, (i.caller.toString() + "_sPluto")).valueOrElse(0), calculateSRate(), Scale8)
+
+  if (stakedPluto < 20000_00000000) then {throw("not enough PLUTO staked")}
   else {
     let votingId = toString(getLastVotingId() + 1)
 
